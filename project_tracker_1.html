@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Tracker — Precise Energy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --border2: #f1f5f9;
+  --p1: #2563eb;
+  --p1-dim: #dbeafe;
+  --p1-glow: rgba(37,99,235,0.08);
+  --p2: #059669;
+  --p2-dim: #d1fae5;
+  --p2-glow: rgba(5,150,105,0.08);
+  --p3: #7c3aed;
+  --p3-dim: #ede9fe;
+  --p3-glow: rgba(124,58,237,0.08);
+  --crit: #dc2626;
+  --high: #ea580c;
+  --med: #ca8a04;
+  --done: #059669;
+  --text: #1e293b;
+  --muted: #64748b;
+  --milestone: #d97706;
+  --output-bg: #eff6ff;
+  --output-t: #1d4ed8;
+  --outcome-bg: #f0fdf4;
+  --outcome-t: #166534;
+  --impact-bg: #fffbeb;
+  --impact-t: #92400e;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 60%, #f0f4ff 100%);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  padding: 20px 28px 16px;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(12px);
+}
+.header-logo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  padding: 4px 10px; border-radius: 4px;
+}
+.header-title { flex:1; }
+.header-title h1 {
+  font-size: 18px; font-weight: 700;
+  background: linear-gradient(90deg, #2563eb, #7c3aed, #059669);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-title p { color: var(--muted); font-size: 11px; margin-top:2px; }
+.header-meta {
+  display: flex; gap: 12px;
+}
+.badge {
+  font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+.badge-week { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+
+/* ── NAV TABS ── */
+.nav {
+  display: flex; gap: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  overflow-x: auto;
+}
+.nav-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: all 0.2s;
+  user-select: none;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--text); border-bottom-color: #2563eb; }
+.nav-tab .dot {
+  display: inline-block; width:8px; height:8px;
+  border-radius: 50%; margin-right: 6px;
+}
+
+/* ── MAIN LAYOUT ── */
+.main { padding: 20px 28px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── OVERVIEW CARDS ── */
+.project-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 24px;
+}
+.project-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.project-card::before {
+  content:'';
+  position: absolute; top:0; left:0; right:0; height:3px;
+  border-radius: 12px 12px 0 0;
+}
+.project-card.p1::before { background: var(--p1); }
+.project-card.p2::before { background: var(--p2); }
+.project-card.p3::before { background: var(--p3); }
+.project-card:hover { border-color: #94a3b8; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+.project-card .proj-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.p1 .proj-label { color: var(--p1); }
+.p2 .proj-label { color: var(--p2); }
+.p3 .proj-label { color: var(--p3); }
+
+.project-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.project-card .proj-outcome {
+  font-size: 11px; color: var(--muted); line-height: 1.5;
+  margin-bottom: 14px;
+}
+.project-card .proj-status-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.status-pill {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+}
+.status-planning { background:#dbeafe; color:#1d4ed8; }
+.status-negotiation { background:#fef3c7; color:#92400e; }
+.status-presale { background:#fee2e2; color:#991b1b; }
+
+.progress-ring {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--muted);
+}
+.ring-wrap { position: relative; width: 36px; height: 36px; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-wrap .ring-text {
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  font-size: 9px; font-weight: 700; color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── WEEK PROGRESS BAR ── */
+.week-banner {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.week-banner h4 { font-size: 11px; color: var(--muted); margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+.week-track {
+  display: flex; gap: 4px; align-items: center;
+}
+.week-block {
+  flex: 1; height: 28px; border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  position: relative; cursor: pointer;
+  transition: all 0.2s;
+}
+.week-block.current {
+  background: #dbeafe; border-color: var(--p1); color: #1d4ed8;
+  box-shadow: 0 0 8px rgba(37,99,235,0.15);
+}
+.week-block.done { background: #d1fae5; border-color: var(--p2); color: #065f46; }
+.week-block .milestone-dot {
+  position: absolute; top: -4px; right: -2px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--milestone); border: 1px solid var(--bg);
+}
+.week-label-row {
+  display: flex; gap: 4px; margin-top: 4px;
+}
+.week-label-row span {
+  flex:1; text-align: center;
+  font-size: 9px; color: var(--muted);
+}
+
+/* ── GANTT TABLE ── */
+.section-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after {
+  content:''; flex:1; height:1px; background: var(--border);
+}
+
+.gantt-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.gantt-head {
+  display: grid;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px; font-weight: 600;
+  color: var(--muted); letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.gantt-head, .gantt-row { padding: 0; }
+
+.gantt-grid { display: contents; }
+
+.col-proj  { width: 50px; }
+.col-id    { width: 70px; }
+.col-task  { flex: 1; min-width: 200px; }
+.col-owner { width: 120px; }
+.col-prio  { width: 80px; }
+.col-w     { width: 34px; }
+.col-prog  { width: 70px; }
+.col-note  { width: 200px; }
+
+.gantt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.gantt-table th {
+  background: #f8fafc;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+}
+.gantt-table th.w-col { text-align: center; width: 36px; }
+.gantt-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border2);
+  vertical-align: middle;
+}
+.gantt-table tr:last-child td { border-bottom: none; }
+.gantt-table tr.section-row td {
+  background: #f1f5f9;
+  font-weight: 700; font-size: 11px;
+  padding: 6px 10px;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+.gantt-table tr:hover td { background: #f8fafc; }
+
+.bar-cell { text-align: center; width: 36px; }
+.bar { display: inline-block; width: 24px; height: 10px; border-radius: 3px; }
+.bar.p1 { background: var(--p1); box-shadow: 0 0 4px rgba(37,99,235,0.35); }
+.bar.p2 { background: var(--p2); box-shadow: 0 0 4px rgba(5,150,105,0.35); }
+.bar.p3 { background: var(--p3); box-shadow: 0 0 4px rgba(124,58,237,0.35); }
+.bar.done-bar { background: #bbf7d0; border: 1px solid var(--p2); }
+.milestone-mark {
+  display: inline-block;
+  width: 12px; height: 12px;
+  background: var(--milestone);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px rgba(251,191,36,0.5);
+  border-radius: 2px;
+}
+
+.prio-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+.prio-crit { background: #fee2e2; color:#b91c1c; border:1px solid #fca5a5; }
+.prio-high { background: #ffedd5; color:#c2410c; border:1px solid #fdba74; }
+.prio-med  { background: #fef9c3; color:#a16207; border:1px solid #fde047; }
+
+.proj-tag {
+  display: inline-block;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.proj-tag.p1 { background: var(--p1-dim); color: #1e40af; }
+.proj-tag.p2 { background: var(--p2-dim); color: #065f46; }
+.proj-tag.p3 { background: var(--p3-dim); color: #5b21b6; }
+
+.task-name { font-weight: 500; }
+.task-output { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.progress-cell {
+  display: flex; align-items: center; gap: 6px;
+}
+.progress-bar-wrap {
+  flex:1; height: 6px; background: var(--surface); border-radius: 3px;
+  overflow: hidden; min-width: 40px;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.progress-pct {
+  font-size: 10px; font-family:'JetBrains Mono',monospace;
+  color: var(--muted); min-width: 28px; text-align: right;
+}
+
+/* progress editable */
+.prog-edit {
+  width: 48px; background: #f8fafc;
+  border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-size: 11px;
+  padding: 2px 4px; text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+.prog-edit:focus { outline: none; border-color: var(--p1); }
+
+/* ── OOM TABLE ── */
+.oom-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.oom-table th {
+  background: #f8fafc;
+  padding: 8px 12px;
+  text-align: left; font-size: 10px; font-weight: 600;
+  color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.oom-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border2);
+  vertical-align: top;
+}
+.oom-table tr.oom-section td {
+  background: #f1f5f9; font-weight: 700; font-size: 11px;
+  padding: 6px 12px; color: #475569;
+}
+.oom-table tr:hover td { background: #f8fafc; }
+
+.oom-output { color: var(--output-t); }
+.oom-outcome { color: var(--outcome-t); }
+.oom-impact  { color: var(--impact-t); }
+
+.deadline-pill {
+  display: inline-block;
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+.deadline-pill.milestone { background: rgba(251,191,36,0.2); color: var(--milestone); border:1px solid rgba(251,191,36,0.3); }
+.deadline-pill.normal { background: var(--surface); color: var(--muted); border:1px solid var(--border); }
+
+/* ── NOTES / STATUS UPDATE ── */
+.notes-area {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.notes-area h4 { font-size: 12px; font-weight: 600; margin-bottom: 10px; color: #475569; }
+.note-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.note-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px;
+}
+.note-card h5 { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+.note-card.p1 h5 { color: var(--p1); }
+.note-card.p2 h5 { color: var(--p2); }
+.note-card.p3 h5 { color: var(--p3); }
+.note-textarea {
+  width: 100%; min-height: 80px;
+  background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-size: 11px;
+  padding: 8px; resize: vertical; line-height: 1.6;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+.note-textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+.note-textarea::placeholder { color: var(--muted); }
+
+/* ── MILESTONE TRACKER ── */
+.milestone-list {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.milestone-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border2);
+  transition: background 0.2s;
+}
+.milestone-item:last-child { border-bottom: none; }
+.milestone-item:hover { background: rgba(255,255,255,0.02); }
+.milestone-diamond {
+  width: 14px; height: 14px; border-radius: 2px;
+  transform: rotate(45deg); flex-shrink: 0;
+  border: 2px solid var(--milestone);
+  background: transparent;
+}
+.milestone-diamond.done { background: var(--milestone); }
+.milestone-week {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600; color: var(--milestone);
+  min-width: 40px;
+}
+.milestone-proj { min-width: 36px; }
+.milestone-name { flex:1; font-size: 12px; font-weight: 500; }
+.milestone-outcome { font-size: 11px; color: var(--muted); flex: 1.5; }
+.milestone-check {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 2px solid #cbd5e1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.milestone-check.checked {
+  background: var(--done); border-color: var(--done);
+}
+.milestone-check.checked::after { content:'✓'; font-size: 11px; color: white; font-weight: 700; }
+
+/* ── ACTION BUTTONS ── */
+.actions {
+  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.btn {
+  padding: 7px 16px; border-radius: 6px; font-size: 12px;
+  font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: var(--p1); color: white; border-color: var(--p1);
+}
+.btn-primary:hover { background: #2563eb; }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--text); border-color: #94a3b8; background: #f8fafc; }
+.btn-save {
+  background: var(--p2); color: white; border-color: var(--p2);
+}
+.btn-save:hover { background: #059669; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  background: #ecfdf5; border: 1px solid #6ee7b7;
+  border-radius: 8px; padding: 10px 18px;
+  font-size: 12px; color: #065f46; font-weight: 600;
+  opacity: 0; transform: translateY(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── SUMMARY STATS ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.stat-card .stat-num {
+  font-size: 24px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.stat-card .stat-label { font-size: 10px; color: var(--muted); margin-top:2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-crit .stat-num { color: #dc2626; }
+.stat-mile .stat-num { color: #d97706; }
+.stat-done .stat-num { color: #059669; }
+.stat-week .stat-num { color: #2563eb; }
+
+/* ── EDITABLE CELLS ── */
+.editable-text {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background 0.15s;
+  display: inline-block;
+  min-width: 20px;
+}
+.editable-text:hover {
+  background: rgba(37,99,235,0.07);
+  outline: 1px dashed #93c5fd;
+}
+.cell-input {
+  width: 100%; background: #fff;
+  border: 2px solid #2563eb; border-radius: 4px;
+  color: var(--text); font-size: 12px;
+  padding: 4px 6px;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  outline: none;
+}
+.cell-textarea {
+  resize: vertical; min-height: 56px;
+  line-height: 1.5;
+}
+.cell-select {
+  cursor: pointer;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+.id-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--muted);
+}
+.outcome-text { color: #166534; }
+
+/* Edit hint tooltip */
+td[title]:hover::after {
+  content: '✏️';
+  font-size: 9px;
+  margin-left: 4px;
+  opacity: 0.4;
+}
+
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+.table-scroll { overflow-x: auto; }
+
+.edit-hint {
+  font-size: 10px; color: var(--muted); margin-left: auto;
+  display: flex; align-items: center; gap: 4px;
+}
+.edit-hint::before {
+  content:'✏️'; font-size: 10px;
+}
+
+/* filter buttons */
+.filter-row {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 4px 12px; border-radius: 20px; font-size: 11px;
+  font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); transition: all 0.2s;
+}
+.filter-btn:hover { color: var(--text); }
+.filter-btn.active { color: white; border-color: transparent; }
+.filter-btn.all.active { background: #f1f5f9; color: var(--text); border-color: #94a3b8; }
+.filter-btn.fp1.active { background: var(--p1-dim); color: #1e40af; border-color: var(--p1); }
+.filter-btn.fp2.active { background: var(--p2-dim); color: #065f46; border-color: var(--p2); }
+.filter-btn.fp3.active { background: var(--p3-dim); color: #5b21b6; border-color: var(--p3); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">PRECISE</div>
+  <div class="header-title">
+    <h1>Project Tracker Dashboard</h1>
+    <p>3 โครงการพลังงาน · 8 สัปดาห์ · Output → Outcome → Impact</p>
+  </div>
+  <div class="header-meta">
+    <span class="badge badge-week" id="currentWeekBadge">W? / 8</span>
+    <button class="btn btn-save" onclick="saveAll()">💾 บันทึก</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-tab active" onclick="switchTab('overview')">
+    <span class="dot" style="background:#60a5fa"></span>ภาพรวม
+  </div>
+  <div class="nav-tab" onclick="switchTab('gantt')">
+    <span class="dot" style="background:#34d399"></span>Gantt + Progress
+  </div>
+  <div class="nav-tab" onclick="switchTab('oom')">
+    <span class="dot" style="background:#a78bfa"></span>Output→Outcome Map
+  </div>
+  <div class="nav-tab" onclick="switchTab('milestones')">
+    <span class="dot" style="background:#fbbf24"></span>◆ Milestones
+  </div>
+  <div class="nav-tab" onclick="switchTab('notes')">
+    <span class="dot" style="background:#f472b6"></span>บันทึก & ติดตาม
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══════════════════════════════════════ OVERVIEW ═══════════════════════ -->
+<div class="section active" id="sec-overview">
+
+  <div class="stats-row">
+    <div class="stat-card stat-crit">
+      <div class="stat-num" id="stat-crit">24</div>
+      <div class="stat-label">Critical Tasks ทั้งหมด</div>
+    </div>
+    <div class="stat-card stat-mile">
+      <div class="stat-num" id="stat-mile">10</div>
+      <div class="stat-label">Milestones ◆</div>
+    </div>
+    <div class="stat-card stat-done">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">Milestones Done</div>
+    </div>
+    <div class="stat-card stat-week">
+      <div class="stat-num" id="stat-week-num">1</div>
+      <div class="stat-label">สัปดาห์ปัจจุบัน (แก้ไขได้)</div>
+    </div>
+  </div>
+
+  <!-- Week Selector -->
+  <div class="week-banner">
+    <h4>กำหนดสัปดาห์ปัจจุบัน (คลิกเพื่อเปลี่ยน)</h4>
+    <div class="week-track" id="weekTrack"></div>
+    <div class="week-label-row" id="weekLabels"></div>
+  </div>
+
+  <!-- Project Cards -->
+  <div class="section-title">โครงการทั้งหมด</div>
+  <div class="project-cards">
+    <div class="project-card p1" onclick="switchTab('gantt');setFilter('P1')">
+      <div class="proj-label">🔵 P1 · Solar P2P</div>
+      <h3>Solar P2P Investment</h3>
+      <div class="proj-outcome">LOI จาก Investor + ยื่น กกพ ERC Sandbox ◆<br>→ เปิดช่องทาง P2P Revenue ใหม่</div>
+      <div class="proj-status-row">
+        <span class="status-pill status-planning">🔵 Planning</span>
+        <div class="progress-ring">
+          <div class="ring-wrap">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#bfdbfe" stroke-width="4"/>
+              <circle id="ring1" cx="18" cy="18" r="14" fill="none" stroke="#2563eb" stroke-width="4"
+                stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-text" id="ring1-txt">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="project-card p2" onclick="switchTab('gantt');setFilter('P2')">
+      <div class="proj-label">🟢 P2 · PCC HVAC</div>
+      <h3>PCC HVAC — VRF MHI KXZ2</h3>
+      <div class="proj-outcome">PO ลงนาม + ติดตั้งเสร็จ + PAC Sign ◆<br>→ ประหยัดค่าไฟ 31.5% (258,889 ฿/ปี)</div>
+      <div class="proj-status-row">
+        <span class="status-pill status-negotiation">🟡 Negotiation</span>
+        <div class="progress-ring">
+          <div class="ring-wrap">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#bbf7d0" stroke-width="4"/>
+              <circle id="ring2" cx="18" cy="18" r="14" fill="none" stroke="#059669" stroke-width="4"
+                stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-text" id="ring2-txt">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="project-card p3" onclick="switchTab('gantt');setFilter('P3')">
+      <div class="proj-label">🟣 P3 · Solar Carport</div>
+      <h3>Solar Carport + BESS Backup</h3>
+      <div class="proj-outcome">MOU ลงนาม + ยื่น PEA/MEA ◆<br>→ เปิด Project ลดค่าไฟ + แก้ Backup</div>
+      <div class="proj-status-row">
+        <span class="status-pill status-presale">🔴 Pre-Sale</span>
+        <div class="progress-ring">
+          <div class="ring-wrap">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#ddd6fe" stroke-width="4"/>
+              <circle id="ring3" cx="18" cy="18" r="14" fill="none" stroke="#7c3aed" stroke-width="4"
+                stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-text" id="ring3-txt">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output→Outcome reminder -->
+  <div class="section-title">หลักการ Output → Outcome → Impact</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+      <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">1 · OUTPUT</div>
+      <div style="font-weight:600;margin-bottom:4px;color:#1e293b;">สิ่งที่เราทำ / ส่งมอบ</div>
+      <div style="font-size:11px;color:#3b82f6;">อยู่ในความควบคุมของเรา<br>วัดได้ทันที · รายวัน/สัปดาห์</div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;">
+      <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">2 · OUTCOME</div>
+      <div style="font-weight:600;margin-bottom:4px;color:#1e293b;">พฤติกรรมที่ตลาดตอบสนอง</div>
+      <div style="font-size:11px;color:#16a34a;">อยู่ใน "อิทธิพล" ของเรา<br>วัดรายเดือน/ไตรมาส</div>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;">
+      <div style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">3 · IMPACT</div>
+      <div style="font-weight:600;margin-bottom:4px;color:#1e293b;">ผลกระทบเชิงธุรกิจ</div>
+      <div style="font-size:11px;color:#d97706;">ระยะกลาง-ยาว<br>Revenue · Margin · Market Share</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ GANTT ═══════════════════════════ -->
+<div class="section" id="sec-gantt">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div class="section-title" style="margin-bottom:0;flex:1">Gantt + Progress Tracker</div>
+    <div class="edit-hint">คลิกตัวเลข Progress เพื่อแก้ไข</div>
+  </div>
+  <div class="filter-row" id="ganttFilter">
+    <button class="filter-btn all active" onclick="setFilter('ALL')">ทั้งหมด</button>
+    <button class="filter-btn fp1" onclick="setFilter('P1')">🔵 P1: Solar P2P</button>
+    <button class="filter-btn fp2" onclick="setFilter('P2')">🟢 P2: PCC HVAC</button>
+    <button class="filter-btn fp3" onclick="setFilter('P3')">🟣 P3: Carport+BESS</button>
+  </div>
+  <div class="gantt-wrap table-scroll">
+    <table class="gantt-table" id="ganttTable">
+      <thead>
+        <tr>
+          <th>Proj</th><th>ID</th><th>Activity / Output</th><th>Owner</th>
+          <th class="w-col">W1</th><th class="w-col">W2</th><th class="w-col">W3</th>
+          <th class="w-col">W4</th><th class="w-col">W5</th><th class="w-col">W6</th>
+          <th class="w-col">W7</th><th class="w-col">W8</th>
+          <th>Priority</th><th>Progress</th><th>Outcome ที่ต้องเกิด</th>
+        </tr>
+      </thead>
+      <tbody id="ganttBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ OOM ════════════════════════════ -->
+<div class="section" id="sec-oom">
+  <div class="section-title">Output → Outcome → Impact Map</div>
+  <div class="filter-row" id="oomFilter">
+    <button class="filter-btn all active" onclick="setOomFilter('ALL')">ทั้งหมด</button>
+    <button class="filter-btn fp1" onclick="setOomFilter('P1')">🔵 P1: Solar P2P</button>
+    <button class="filter-btn fp2" onclick="setOomFilter('P2')">🟢 P2: PCC HVAC</button>
+    <button class="filter-btn fp3" onclick="setOomFilter('P3')">🟣 P3: Carport+BESS</button>
+  </div>
+  <div class="gantt-wrap table-scroll">
+    <table class="oom-table" id="oomTable">
+      <thead>
+        <tr>
+          <th>Proj</th><th>Task</th><th>Activity (OUTPUT ที่ทำ)</th>
+          <th style="background:#eff6ff;color:#1d4ed8">📦 Output Deliverable</th>
+          <th style="background:#f0fdf4;color:#166534">🎯 Outcome (ตลาดตอบสนอง)</th>
+          <th style="background:#fffbeb;color:#92400e">💥 Impact (ธุรกิจระยะยาว)</th>
+          <th>Deadline</th><th>Priority</th>
+        </tr>
+      </thead>
+      <tbody id="oomBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MILESTONES ══════════════════════ -->
+<div class="section" id="sec-milestones">
+  <div class="section-title">◆ Milestones & Gates — 8 สัปดาห์</div>
+  <div class="milestone-list" id="milestoneList"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ NOTES ══════════════════════════ -->
+<div class="section" id="sec-notes">
+  <div class="section-title">📝 บันทึกความคืบหน้า & ติดตามงาน</div>
+  <div class="notes-area">
+    <h4>บันทึกประจำสัปดาห์ (แก้ไขได้โดยตรง)</h4>
+    <div class="note-grid">
+      <div class="note-card p1">
+        <h5>🔵 P1 — Solar P2P</h5>
+        <textarea class="note-textarea" id="note-p1" placeholder="สรุปความคืบหน้า, ปัญหา, Next Action…"></textarea>
+      </div>
+      <div class="note-card p2">
+        <h5>🟢 P2 — PCC HVAC</h5>
+        <textarea class="note-textarea" id="note-p2" placeholder="สรุปความคืบหน้า, ปัญหา, Next Action…"></textarea>
+      </div>
+      <div class="note-card p3">
+        <h5>🟣 P3 — Carport+BESS</h5>
+        <textarea class="note-textarea" id="note-p3" placeholder="สรุปความคืบหน้า, ปัญหา, Next Action…"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="notes-area">
+    <h4>⚡ Blockers & Risks ที่ต้องแก้ไขด่วน</h4>
+    <textarea class="note-textarea" id="note-blockers" style="width:100%;min-height:100px;" placeholder="ระบุปัญหาที่บล็อกโครงการ, ผู้รับผิดชอบ, กำหนดแก้…"></textarea>
+  </div>
+  <div class="notes-area">
+    <h4>📅 Action Items สัปดาห์ถัดไป</h4>
+    <textarea class="note-textarea" id="note-actions" style="width:100%;min-height:100px;" placeholder="[ ] รายการงานที่ต้องทำ, Owner, Due Date…"></textarea>
+  </div>
+  <div class="actions">
+    <button class="btn btn-save" onclick="saveAll()">💾 บันทึกทั้งหมด</button>
+    <button class="btn btn-ghost" onclick="clearNotes()">🗑 ล้าง Notes</button>
+    <button class="btn btn-primary" onclick="exportSummary()">📋 Copy Summary</button>
+    <button class="btn btn-ghost" onclick="resetEdits()" style="color:#dc2626;border-color:#fca5a5">↩️ รีเซ็ตการแก้ไข</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════
+const GANTT_DATA = [
+  // [proj, id, activity, owner, [w1..w8], priority, progress, outcome]
+  {s:'P1', label:'🔵 PROJECT 1: Solar P2P Investment'},
+  {proj:'P1',id:'A1',task:'Energy Audit ตึกทุกหลัง',out:'Output: kWh/เดือน + Peak Demand + Tariff',owner:'Energy Analyst',weeks:[1,1,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'Investor เห็น Baseline → เชื่อถือตัวเลข → เจรจาต่อ'},
+  {proj:'P1',id:'A2–A3',task:'Financial Model + Technical Sizing (IRR+SLD)',out:'Output: Excel IRR 8–12% + Single-Line Diagram',owner:'Fin Analyst + Engineer',weeks:[0,1,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'Investor ประเมิน ROI → ตัดสินใจลงทุน'},
+  {proj:'P1',id:'B1',task:'ศึกษา ERC Sandbox + เงื่อนไข กกพ',out:'Output: Regulatory Checklist + แบบฟอร์มยื่น',owner:'Legal / Regulatory',weeks:[1,1,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'ลดความเสี่ยงกฎหมาย → เดินหน้าได้ไม่สะดุด'},
+  {proj:'P1',id:'B2',task:'ร่าง PPA Agreement + SPV Structure',out:'Output: PPA Draft v1 + SPV/ESCO Structure',owner:'Legal Counsel',weeks:[0,0,1,1,1,0,0,0],prio:'high',prog:0,outcome:'คู่สัญญาเจรจาบน Template เดียวกัน → เร่งลงนาม'},
+  {proj:'P1',id:'C1',task:'Discovery Meeting — SPIN (Investor+Offtaker)',out:'Output: Pain Point Map + Value Map + Next Step',owner:'Sales Manager',weeks:[0,0,1,0,0,0,0,0],prio:'crit',prog:0,outcome:'Investor/Offtaker เปิดรับ → นัดถัดไป'},
+  {proj:'P1',id:'C3',task:'Investor Deck + Business Case + Proposal',out:'Output: Deck 15 สไลด์ + Business Case PDF',owner:'Sales + Finance',weeks:[0,0,0,0,1,1,0,0],prio:'crit',prog:0,outcome:'ผู้บริหาร Investor อนุมัติในหลักการ'},
+  {proj:'P1',id:'B3+B4 ◆',task:'ยื่น กกพ ERC Sandbox + ยื่น Grid Connection ◆',out:'Output: ใบสมัครยื่นครบ (กกพ + PEA/MEA)',owner:'PM + Engineer',weeks:[0,0,0,0,0,2,0,0],prio:'crit',prog:0,outcome:'Regulatory clock เริ่มนับ → Fast Track',milestone:true},
+  {proj:'P1',id:'C4 ◆',task:'Negotiation + Sign (PPA / LOI / MOU) ◆',out:'Output: LOI จาก Investor + MOU กับ Offtaker',owner:'MD / Sales Lead',weeks:[0,0,0,0,0,0,1,1],prio:'crit',prog:0,outcome:'ปลดล็อก EPC Budget → Revenue Visibility',milestone:true},
+
+  {s:'P2', label:'🟢 PROJECT 2: PCC HVAC — VRF MHI KXZ2'},
+  {proj:'P2',id:'6.1–6.2 ◆',task:'Negotiation + Contract Sign + PO ◆',out:'Output: Signed Contract + PO + Invoice งวด 1 (2.26M)',owner:'Sales Mgr + Legal',weeks:[1,1,2,0,0,0,0,0],prio:'crit',prog:50,outcome:'PCC commit → Cash งวด 1 เข้า → Procurement เริ่ม',milestone:true},
+  {proj:'P2',id:'6.3',task:'Kick-off Meeting + Site Visit (3 ชั้น)',out:'Output: Site Survey Report + Kick-off Minutes',owner:'PM (Precise)',weeks:[0,0,1,0,0,0,0,0],prio:'crit',prog:0,outcome:'Scope ตรงกัน → ลด Change Order → Margin ดีขึ้น'},
+  {proj:'P2',id:'7A.1–7A.3',task:'Shop Drawing + BOQ + Pre-order VRF MHI KXZ2',out:'Output: Approved Drawing + PO อุปกรณ์ + Equipment W4',owner:'Engineer + Procurement',weeks:[0,1,1,1,0,0,0,0],prio:'crit',prog:0,outcome:'อุปกรณ์ On-site W4 → ติดตั้งได้ทันที'},
+  {proj:'P2',id:'7B.1–7B.4',task:'รื้อถอน + ติดตั้ง VRF + EMS/BACnet + Smart Lighting',out:'Output: VRF Installed + EMS Live + Lighting Done',owner:'EPC + EMS Engineer',weeks:[0,0,0,1,1,1,0,0],prio:'crit',prog:0,outcome:'ระบบใหม่ประหยัดพลังงาน 63,703 kWh/ปี ทันที'},
+  {proj:'P2',id:'7B.5–7B.6 ◆',task:'Commissioning + Balancing + UAT ◆',out:'Output: Commissioning Report + UAT Pass + PAC Draft',owner:'Engineer + MHI + PM',weeks:[0,0,0,0,0,1,1,2],prio:'crit',prog:0,outcome:'PCC มั่นใจ → เซ็น PAC → เบิก Invoice งวด 2+3',milestone:true},
+  {proj:'P2',id:'8.1 ◆',task:'PAC Sign + Invoice งวด 2+3 ◆',out:'Output: Signed PAC + Invoice 5,265,470 ฿ รับเงิน',owner:'PM + Facility PCC',weeks:[0,0,0,0,0,0,0,2],prio:'crit',prog:0,outcome:'Cash Inflow ครบ → Revenue Recognized → Bottom Line ↑',milestone:true},
+  {proj:'P2',id:'8.4–8.5',task:'MA Contract + QBR Dashboard Setup',out:'Output: MA Agreement 3–5 ปี + QBR Template',owner:'Sales Manager',weeks:[0,0,0,0,0,0,0,1],prio:'med',prog:0,outcome:'Recurring Revenue → Customer LTV สูงขึ้น'},
+
+  {s:'P3', label:'🟣 PROJECT 3: Solar Carport + BESS Backup Upgrade'},
+  {proj:'P3',id:'A1–A2',task:'Energy Audit ระบบ BESS เดิม + Site Survey ลานจอดรถ',out:'Output: Root Cause Report + Layout Plan + kWp Estimate',owner:'Energy + Civil Eng',weeks:[1,1,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'ลูกค้าเห็น ปัญหาชัด+โอกาสชัด → เปิดรับ Proposal'},
+  {proj:'P3',id:'B1',task:'ศึกษากฎหมาย VSPP + Net-Metering (PEA/MEA)',out:'Output: Regulatory Checklist + แบบฟอร์มยื่นพร้อม',owner:'Legal / Regulatory',weeks:[1,1,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'ทีมขายมั่นใจกฎหมาย → นำเสนอน่าเชื่อถือ'},
+  {proj:'P3',id:'C1',task:'Discovery Meeting — Backup Failure + Energy Cost',out:'Output: Pain Point Map + Go/No-Go Decision',owner:'Sales Manager',weeks:[1,0,0,0,0,0,0,0],prio:'crit',prog:0,outcome:'ลูกค้าเปิดรับ Proposal → นัดถัดไป'},
+  {proj:'P3',id:'A3–A4',task:'Technical Sizing (Grid-Forming+ATS) + Financial Model',out:'Output: SLD + Islanding Design + IRR/NPV/LCOE Model',owner:'System Eng + Finance',weeks:[0,1,1,0,0,0,0,0],prio:'crit',prog:0,outcome:'CFO เห็น ROI ชัด → ตัดสินใจอนุมัติงบ'},
+  {proj:'P3',id:'A5',task:'Proposal & Presentation Deck (15 Slides)',out:'Output: Business Case PDF + Deck (Output+Outcome+Impact)',owner:'Sales + Engineer',weeks:[0,0,0,1,1,0,0,0],prio:'crit',prog:0,outcome:'ผู้บริหารอนุมัติในหลักการ → เปิดเจรจา'},
+  {proj:'P3',id:'C2',task:'นำเสนอ Technical Solution + Financial Model',out:'Output: Proposal PDF + Q&A Minutes',owner:'Sales + Engineer',weeks:[0,0,0,1,1,0,0,0],prio:'crit',prog:0,outcome:'Objection ลดลง → Negotiation เร็วขึ้น'},
+  {proj:'P3',id:'B2+B4 ◆',task:'ยื่น PEA/MEA Solar Permit + ยื่นแบบก่อสร้าง ◆',out:'Output: ใบสมัครยื่นครบ (PEA/MEA + อบต./เทศบาล)',owner:'Project Manager',weeks:[0,0,0,2,0,0,0,0],prio:'high',prog:0,outcome:'Regulatory clock เริ่มนับ → EPC พร้อมเริ่มทันที',milestone:true},
+  {proj:'P3',id:'C3 ◆',task:'เจรจา + ลงนาม MOU / LOI ◆',out:'Output: MOU/LOI ลงนาม (ยืนยัน Scope + Budget)',owner:'MD / Sales Lead',weeks:[0,0,0,0,0,2,0,0],prio:'crit',prog:0,outcome:'ปลดล็อก EPC + Procurement → Revenue Backlog ↑',milestone:true},
+];
+
+const OOM_DATA = [
+  {s:'P1',label:'🔵 PROJECT 1: Solar P2P Investment'},
+  {proj:'P1',id:'A1',act:'Energy Audit ตึกทุกหลัง',out:'รายงาน kWh/เดือน + Peak Demand + Tariff ทุกตึก',oc:'Investor & Offtaker เห็น Baseline ชัด → เชื่อถือตัวเลข → ยินดีเจรจาต่อ',imp:'ลดความเสี่ยงออกแบบผิด → IRR แม่นยำ → ปิดดีลง่าย',dl:'W1–W2',prio:'crit'},
+  {proj:'P1',id:'A2–A3',act:'Financial Model + Technical Sizing (IRR+SLD)',out:'Excel Model IRR 8–12% + Single-Line Diagram + Equipment List',oc:'Investor ประเมิน ROI ได้ → ตัดสินใจลงทุน · Offtaker เห็น PPA Rate แข่งขันได้',imp:'เกิด Revenue Stream ใหม่จาก P2P → Diversify รายได้',dl:'W2',prio:'crit'},
+  {proj:'P1',id:'B1',act:'ศึกษา ERC Sandbox + เงื่อนไข กกพ',out:'Regulatory Checklist + แบบฟอร์มยื่น กกพ พร้อมยื่น',oc:'ลดความเสี่ยงด้านกฎหมาย → ทีมมั่นใจ → เดินหน้าได้โดยไม่รอ',imp:'โครงการไม่สะดุดจากกฎระเบียบ → ลด Time-to-Revenue',dl:'W1–W2',prio:'crit'},
+  {proj:'P1',id:'B2',act:'ร่าง PPA Agreement + SPV Structure',out:'PPA Draft v1 + SPV/ESCO Structure',oc:'ทั้งสองฝ่ายเห็นกรอบสัญญาชัด → ลดเวลาเจรจา → เร่งลงนาม',imp:'โครงสร้างกฎหมายรองรับ → ลงทุนได้มั่นใจ → ลดต้นทุนกฎหมายยาว',dl:'W3–W5',prio:'high'},
+  {proj:'P1',id:'C1',act:'Discovery Meeting — SPIN (Investor+Offtaker)',out:'Pain Point Map + Value Map + Next Step Action',oc:'Investor & Offtaker เข้าใจ Value Prop → เปิดรับการนำเสนอรอบถัดไป',imp:'สร้าง Pipeline คุณภาพ → Win Rate สูงขึ้น',dl:'W3',prio:'crit'},
+  {proj:'P1',id:'C3',act:'Investor Deck + Business Case + Proposal',out:'Deck 15 สไลด์ + Business Case PDF',oc:'ผู้บริหาร Investor อนุมัติในหลักการ → ขยับสู่ขั้นเจรจาสัญญา',imp:'เร่ง Time-to-Decision → ลดค่าใช้จ่าย Pre-sale',dl:'W5–W6',prio:'crit'},
+  {proj:'P1',id:'B3+B4 ◆',act:'ยื่น กกพ ERC Sandbox + ยื่น Grid Connection ◆',out:'ใบสมัครยื่นครบ (กกพ + PEA/MEA)',oc:'กระบวนการอนุมัติเริ่มนับเวลา → ลดความล่าช้า Regulatory Queue',imp:'เปิดทาง Legal P2P Trading → First-Mover Advantage',dl:'W6 ◆',prio:'crit'},
+  {proj:'P1',id:'C4 ◆',act:'Negotiation + Sign (PPA/LOI/MOU) ◆',out:'LOI จาก Investor + MOU กับ Offtaker ลงนาม',oc:'โครงการได้รับการยืนยันทางการ → ปลดล็อก Budget EPC',imp:'Revenue Visibility เพิ่ม → ลด Financial Risk',dl:'W7–W8 ◆',prio:'crit'},
+
+  {s:'P2',label:'🟢 PROJECT 2: PCC HVAC — VRF MHI KXZ2'},
+  {proj:'P2',id:'6.1–6.2 ◆',act:'Negotiation ราคา + Contract Sign + PO ◆',out:'Signed Contract + PO + Invoice งวด 1 (2,256,630 ฿)',oc:'PCC ยืนยันการลงทุน → Cash Flow งวดแรกเข้า → Procurement เริ่ม',imp:'ปลดล็อก CAPEX 7.52 ล้าน → Revenue Recognition เริ่ม',dl:'W1–W3 ◆',prio:'crit'},
+  {proj:'P2',id:'6.3',act:'Kick-off Meeting + Site Visit (ชั้น 2,3,7)',out:'Site Survey Report + Kick-off Minutes',oc:'ทีม PCC + Precise ตรงกัน Scope → ลดความเสี่ยง Change Order',imp:'ลด Rework Cost → เพิ่ม Gross Margin',dl:'W3',prio:'crit'},
+  {proj:'P2',id:'7A.1–7A.3',act:'Shop Drawing + BOQ + Pre-order VRF MHI KXZ2',out:'Approved Shop Drawing + PO อุปกรณ์ + Equipment on Site W4',oc:'อุปกรณ์พร้อมตรงเวลา → ช่างเริ่มติดตั้งได้ทันที W4',imp:'ลด Project Delay Risk → PAC เร็วขึ้น',dl:'W2–W4',prio:'crit'},
+  {proj:'P2',id:'7B.1–7B.4',act:'รื้อถอน + ติดตั้ง VRF + EMS + Smart Lighting',out:'VRF Installed + EMS Live + Smart Lighting Done',oc:'ระบบใหม่ประหยัดพลังงานทันที → PCC เห็นผลก่อน PAC',imp:'ลดพลังงาน 63,703 kWh/ปี · ลดค่าไฟ 258,889 ฿/ปี · ลด CO₂',dl:'W4–W6',prio:'crit'},
+  {proj:'P2',id:'7B.5–7B.6 ◆',act:'Commissioning + Balancing + UAT ◆',out:'Commissioning Report + UAT Pass Report + PAC Draft',oc:'PCC มั่นใจคุณภาพ → ยินดีเซ็น PAC → เบิก Invoice งวด 2+3',imp:'Gross Margin ดีขึ้น (ลด Warranty Claim) → Reference Site',dl:'W6–W7 ◆',prio:'crit'},
+  {proj:'P2',id:'8.1 ◆',act:'PAC Sign ◆ + Invoice งวด 2+3',out:'Signed PAC + Invoice 5,265,470 ฿ รับเงิน',oc:'PCC ยืนยันรับมอบ → Cash Inflow ครบ 100% → ความสัมพันธ์ยกระดับ',imp:'Revenue Recognized เต็มจำนวน → Bottom Line บริษัท ↑',dl:'W8 ◆',prio:'crit'},
+  {proj:'P2',id:'8.4–8.5',act:'MA Contract + QBR Dashboard Setup',out:'MA Agreement 3–5 ปี + QBR Energy Report Template',oc:'PCC ต่อสัญญาดูแล → Recurring Revenue → ลด Churn Risk',imp:'Annuity Revenue → ลด Sales Cost Renewal → LTV ↑',dl:'W8',prio:'med'},
+
+  {s:'P3',label:'🟣 PROJECT 3: Solar Carport + BESS Backup'},
+  {proj:'P3',id:'A1–A2',act:'Energy Audit BESS เดิม + Site Survey ลานจอดรถ',out:'Root Cause Report + Layout Plan + kWp Estimate',oc:"ผู้บริหารลูกค้าเห็น 'ปัญหาชัด+โอกาสชัด' → เปิดรับ Proposal",imp:'ลด Risk Scope Change หลัง PO → ลด Rework Cost',dl:'W1–W2',prio:'crit'},
+  {proj:'P3',id:'A3–A4',act:'Technical Sizing (Grid-Forming+ATS) + Financial Model',out:'SLD + Islanding Design + Excel Model (IRR, NPV, LCOE)',oc:'ลูกค้าเห็น ROI ชัด → CFO/MD มีข้อมูลพอ → อนุมัติงบ',imp:'ลดต้นทุนพลังงาน 20–40%/ปี · IRR 8–15%',dl:'W2–W3',prio:'crit'},
+  {proj:'P3',id:'B1',act:'ศึกษากฎหมาย VSPP + Net-Metering',out:'Regulatory Checklist + แบบฟอร์มยื่นพร้อม',oc:'ทีมขายมั่นใจกฎหมาย → นำเสนอได้น่าเชื่อถือ',imp:'ลดความเสี่ยง Regulatory Delay → Timeline ตามแผน',dl:'W1–W2',prio:'crit'},
+  {proj:'P3',id:'A5',act:'Proposal + Deck 15 Slides (Backup+Carport)',out:'Business Case PDF + Deck 15 สไลด์',oc:'ผู้บริหารอนุมัติในหลักการ → นัด Negotiation',imp:'เร่ง Sales Cycle → Win Rate ↑',dl:'W4–W5',prio:'crit'},
+  {proj:'P3',id:'C1–C2',act:'Discovery Meeting + นำเสนอ Technical Solution',out:'Pain Point Map + Proposal PDF + Q&A Minutes',oc:'ลูกค้าเข้าใจ Solution ทั้งสองด้าน → Objection ลดลง',imp:'ปิดดีลเร็ว → ลด Pre-sale Cost',dl:'W1 + W4–W5',prio:'crit'},
+  {proj:'P3',id:'B2+B4 ◆',act:'ยื่น PEA/MEA + ยื่นแบบก่อสร้าง Carport ◆',out:'ใบสมัครยื่นครบ (PEA/MEA + อบต./เทศบาล)',oc:'Regulatory clock เริ่มนับ → EPC เตรียมเริ่มงานได้',imp:'ลด Regulatory Lag → Construction เร็ว 4–8 สัปดาห์',dl:'W4 ◆',prio:'high'},
+  {proj:'P3',id:'C3 ◆',act:'เจรจา + ลงนาม MOU / LOI ◆',out:'MOU/LOI ลงนาม (ยืนยัน Scope + Budget กรอบ)',oc:'ปลดล็อก EPC + Procurement → เดินหน้าอย่างเป็นทางการ',imp:'Revenue Visibility → Backlog ที่แข็งแกร่ง',dl:'W6 ◆',prio:'crit'},
+];
+
+const MILESTONES = [
+  {proj:'P1',week:6,name:'ยื่น กกพ ERC Sandbox + ยื่น PEA/MEA ◆',outcome:'Regulatory clock เริ่มนับ → Fast Track'},
+  {proj:'P1',week:7,name:'Sign PPA / LOI / MOU ◆',outcome:'ปลดล็อก EPC Budget → Revenue Visibility'},
+  {proj:'P2',week:3,name:'Contract Sign + PO ◆ (งวด 1: 2,256,630 ฿)',outcome:'Cash งวด 1 เข้า → Procurement เริ่ม'},
+  {proj:'P2',week:7,name:'UAT Performance Test ◆',outcome:'PCC มั่นใจ → เซ็น PAC'},
+  {proj:'P2',week:8,name:'PAC Sign ◆ (5,265,470 ฿ รับเงิน)',outcome:'Revenue Recognized → Bottom Line ↑'},
+  {proj:'P3',week:4,name:'ยื่น PEA/MEA + แบบก่อสร้าง Carport ◆',outcome:'Regulatory เริ่มนับ → EPC พร้อม'},
+  {proj:'P3',week:6,name:'MOU / LOI ลงนาม ◆',outcome:'ปลดล็อก EPC → Revenue Backlog ↑'},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let state = {
+  currentWeek: 1,
+  progress: {},
+  mileDone: {},
+  notes: {p1:'',p2:'',p3:'',blockers:'',actions:''},
+  ganttFilter: 'ALL',
+  oomFilter: 'ALL',
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('preciseTracker');
+    if (s) { state = {...state, ...JSON.parse(s)}; }
+  } catch(e) {}
+}
+
+function saveState() {
+  // collect progress from inputs
+  document.querySelectorAll('.prog-edit').forEach(inp => {
+    state.progress[inp.dataset.key] = parseInt(inp.value)||0;
+  });
+  state.notes.p1 = document.getElementById('note-p1').value;
+  state.notes.p2 = document.getElementById('note-p2').value;
+  state.notes.p3 = document.getElementById('note-p3').value;
+  state.notes.blockers = document.getElementById('note-blockers').value;
+  state.notes.actions  = document.getElementById('note-actions').value;
+  // persist gantt/oom overrides and milestone edits
+  try {
+    const toSave = {
+      ...state,
+      _milestones: MILESTONES,
+      _ganttExtra: GANTT_DATA.filter(d=>!d.s && d.id && d.id.startsWith('NEW')),
+      _oomExtra:   OOM_DATA.filter(d=>!d.s && d.id && d.id.startsWith('NEW')),
+    };
+    localStorage.setItem('preciseTracker', JSON.stringify(toSave));
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WEEK TRACK
+// ═══════════════════════════════════════════════════════════════════
+const MILESTONE_WEEKS = {3:true,4:true,6:true,7:true,8:true};
+
+function buildWeekTrack() {
+  const track = document.getElementById('weekTrack');
+  const labels = document.getElementById('weekLabels');
+  track.innerHTML = ''; labels.innerHTML = '';
+  for (let w=1; w<=8; w++) {
+    const block = document.createElement('div');
+    block.className = 'week-block' + (w < state.currentWeek ? ' done' : w===state.currentWeek ? ' current' : '');
+    block.textContent = 'W'+w;
+    if (MILESTONE_WEEKS[w]) {
+      const dot = document.createElement('div');
+      dot.className='milestone-dot'; block.appendChild(dot);
+    }
+    block.onclick = () => { state.currentWeek = w; refreshAll(); };
+    track.appendChild(block);
+
+    const lbl = document.createElement('span');
+    lbl.textContent = w===state.currentWeek ? '← ปัจจุบัน' : '';
+    labels.appendChild(lbl);
+  }
+  document.getElementById('currentWeekBadge').textContent = `W${state.currentWeek} / 8`;
+  document.getElementById('stat-week-num').textContent = state.currentWeek;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EDITABLE CELL HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const PROJ_CLS = {P1:'p1',P2:'p2',P3:'p3'};
+const PROJ_OPTS = ['P1','P2','P3'];
+const PRIO_OPTS = ['crit','high','med'];
+const PRIO_LABELS = {crit:'🔴 Critical', high:'🟠 High', med:'🟡 Medium'};
+const PRIO_HTML = {
+  crit:'<span class="prio-badge prio-crit">🔴 Critical</span>',
+  high:'<span class="prio-badge prio-high">🟠 High</span>',
+  med: '<span class="prio-badge prio-med">🟡 Medium</span>'
+};
+
+// Generic editable text cell
+function editCell(td, value, onSave, opts={}) {
+  if (td.querySelector('input,textarea,select')) return;
+  const original = td.innerHTML;
+  const isLong = (value||'').length > 60 || opts.multiline;
+  let el;
+  if (opts.select) {
+    el = document.createElement('select');
+    el.className = 'cell-input cell-select';
+    opts.choices.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.val; o.textContent = c.label;
+      if (c.val === value) o.selected = true;
+      el.appendChild(o);
+    });
+  } else if (isLong) {
+    el = document.createElement('textarea');
+    el.className = 'cell-input cell-textarea';
+    el.value = value || '';
+    el.rows = 3;
+  } else {
+    el = document.createElement('input');
+    el.className = 'cell-input';
+    el.type = 'text';
+    el.value = value || '';
+  }
+  td.innerHTML = '';
+  td.appendChild(el);
+  el.focus();
+  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.select();
+
+  const commit = () => {
+    const v = el.tagName === 'SELECT' ? el.value : el.value.trim();
+    onSave(v);
+    saveState();
+    refreshAll();
+  };
+  el.addEventListener('blur', commit);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') { td.innerHTML = original; }
+  });
+}
+
+// Week bar toggle: click to cycle 0→1→2→0
+function toggleWeek(gKey, wi) {
+  if (!state.ganttData) state.ganttData = {};
+  const d = getGanttItem(gKey);
+  if (!d) return;
+  const weeks = getFieldArr(d, 'weeks', gKey);
+  weeks[wi] = (weeks[wi] + 1) % 3;
+  setFieldArr(d, 'weeks', gKey, weeks);
+  saveState();
+  buildGantt();
+}
+
+// Get merged data (base + overrides)
+function getGanttItem(key) {
+  return GANTT_DATA.find(d => !d.s && (d.proj+'_'+d.id) === key);
+}
+function getField(d, field, key) {
+  return (state.ganttOverride?.[key]?.[field]) ?? d[field];
+}
+function setField(d, field, key, val) {
+  if (!state.ganttOverride) state.ganttOverride = {};
+  if (!state.ganttOverride[key]) state.ganttOverride[key] = {};
+  state.ganttOverride[key][field] = val;
+}
+function getFieldArr(d, field, key) {
+  const stored = state.ganttOverride?.[key]?.[field];
+  return stored ? [...stored] : [...d[field]];
+}
+function setFieldArr(d, field, key, val) {
+  if (!state.ganttOverride) state.ganttOverride = {};
+  if (!state.ganttOverride[key]) state.ganttOverride[key] = {};
+  state.ganttOverride[key][field] = val;
+}
+function getOomField(d, field, key) {
+  return (state.oomOverride?.[key]?.[field]) ?? d[field];
+}
+function setOomField(d, field, key, val) {
+  if (!state.oomOverride) state.oomOverride = {};
+  if (!state.oomOverride[key]) state.oomOverride[key] = {};
+  state.oomOverride[key][field] = val;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GANTT TABLE — FULLY EDITABLE
+// ═══════════════════════════════════════════════════════════════════
+function buildGantt() {
+  const tbody = document.getElementById('ganttBody');
+  tbody.innerHTML = '';
+  GANTT_DATA.forEach((d) => {
+    if (d.s) {
+      if (state.ganttFilter !== 'ALL' && d.s !== state.ganttFilter) return;
+      const tr = document.createElement('tr');
+      tr.className = 'section-row';
+      tr.innerHTML = `<td colspan="16">${d.label}</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
+    if (state.ganttFilter !== 'ALL' && d.proj !== state.ganttFilter) return;
+
+    const key = d.proj + '_' + d.id;
+    const prog = state.progress[key] ?? d.prog;
+    const task  = getField(d,'task',key);
+    const out   = getField(d,'out',key);
+    const owner = getField(d,'owner',key);
+    const prio  = getField(d,'prio',key);
+    const outcome = getField(d,'outcome',key);
+    const projV = getField(d,'proj',key);
+    const idV   = getField(d,'id',key);
+    const weeks = getFieldArr(d,'weeks',key);
+    const pc = PROJ_CLS[projV] || 'p1';
+    const progColor = projV==='P1'?'#2563eb':projV==='P2'?'#059669':'#7c3aed';
+
+    const tr = document.createElement('tr');
+    tr.dataset.key = key;
+
+    // col 1: Proj (editable select)
+    const tdProj = document.createElement('td');
+    tdProj.innerHTML = `<span class="proj-tag ${pc}" title="คลิกเพื่อแก้ไข">${projV}</span>`;
+    tdProj.style.cursor = 'pointer';
+    tdProj.addEventListener('click', () => editCell(tdProj, projV, v => setField(d,'proj',key,v), {
+      select:true, choices: PROJ_OPTS.map(p=>({val:p,label:p}))
+    }));
+    tr.appendChild(tdProj);
+
+    // col 2: ID (editable)
+    const tdId = document.createElement('td');
+    tdId.innerHTML = `<span class="editable-text id-text" title="คลิกเพื่อแก้ไข">${idV}</span>`;
+    tdId.addEventListener('click', () => editCell(tdId, idV, v => setField(d,'id',key,v)));
+    tr.appendChild(tdId);
+
+    // col 3: Task + Output (editable)
+    const tdTask = document.createElement('td');
+    tdTask.innerHTML = `<div class="task-name editable-text" title="คลิกเพื่อแก้ชื่องาน">${task}</div>
+      <div class="task-output editable-text" title="คลิกเพื่อแก้ Output">${out}</div>`;
+    tdTask.querySelector('.task-name').addEventListener('click', e => {
+      e.stopPropagation();
+      editCell(e.currentTarget.closest('td').querySelector('.task-name') ? e.currentTarget : tdTask,
+        task, v => setField(d,'task',key,v), {multiline:true});
+    });
+    tdTask.querySelector('.task-output').addEventListener('click', e => {
+      e.stopPropagation();
+      const el = e.currentTarget;
+      editCell(el, out, v => setField(d,'out',key,v), {multiline:true});
+    });
+    tr.appendChild(tdTask);
+
+    // col 4: Owner (editable)
+    const tdOwner = document.createElement('td');
+    tdOwner.innerHTML = `<span class="editable-text" style="font-size:11px;color:var(--muted)" title="คลิกเพื่อแก้ไข">${owner}</span>`;
+    tdOwner.addEventListener('click', () => editCell(tdOwner, owner, v => setField(d,'owner',key,v)));
+    tr.appendChild(tdOwner);
+
+    // cols 5–12: Week bars (click to toggle)
+    weeks.forEach((w, wi) => {
+      const tdW = document.createElement('td');
+      tdW.className = 'bar-cell';
+      tdW.title = `W${wi+1} — คลิกเพื่อ toggle (ว่าง→แถบ→Milestone→ว่าง)`;
+      tdW.style.cursor = 'pointer';
+      const isPast = (wi+1) < state.currentWeek;
+      if (w===2) {
+        tdW.innerHTML = `<div class="milestone-mark"></div>`;
+      } else if (w===1) {
+        const cls = isPast ? 'done-bar' : pc;
+        tdW.innerHTML = `<div class="bar ${cls}"></div>`;
+      }
+      tdW.addEventListener('click', () => toggleWeek(key, wi));
+      tr.appendChild(tdW);
+    });
+
+    // col 13: Priority (editable select)
+    const tdPrio = document.createElement('td');
+    tdPrio.innerHTML = PRIO_HTML[prio];
+    tdPrio.style.cursor = 'pointer';
+    tdPrio.title = 'คลิกเพื่อเปลี่ยน Priority';
+    tdPrio.addEventListener('click', () => editCell(tdPrio, prio, v => setField(d,'prio',key,v), {
+      select:true, choices: PRIO_OPTS.map(p=>({val:p, label:PRIO_LABELS[p]}))
+    }));
+    tr.appendChild(tdPrio);
+
+    // col 14: Progress (input)
+    const tdProg = document.createElement('td');
+    tdProg.innerHTML = `
+      <div class="progress-cell">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:${prog}%;background:${progColor}"></div>
+        </div>
+        <input class="prog-edit" type="number" min="0" max="100"
+          value="${prog}" data-key="${key}"
+          onchange="updateProgress(this)" oninput="updateProgress(this)">
+        <span style="font-size:9px;color:var(--muted)">%</span>
+      </div>`;
+    tr.appendChild(tdProg);
+
+    // col 15: Outcome (editable)
+    const tdOut = document.createElement('td');
+    tdOut.innerHTML = `<span class="editable-text outcome-text" style="font-size:11px;color:#166534" title="คลิกเพื่อแก้ไข Outcome">${outcome}</span>`;
+    tdOut.addEventListener('click', () => editCell(tdOut, outcome, v => setField(d,'outcome',key,v), {multiline:true}));
+    tr.appendChild(tdOut);
+
+    tbody.appendChild(tr);
+  });
+
+  // Add Task button row
+  const trAdd = document.createElement('tr');
+  trAdd.innerHTML = `<td colspan="16" style="text-align:center;padding:8px">
+    <button class="btn btn-ghost" style="font-size:11px;padding:4px 16px" onclick="addGanttRow()">＋ เพิ่ม Task ใหม่</button>
+  </td>`;
+  tbody.appendChild(trAdd);
+
+  updateRings();
+}
+
+function updateProgress(inp) {
+  const val = Math.min(100, Math.max(0, parseInt(inp.value)||0));
+  inp.value = val;
+  const row = inp.closest('tr');
+  const bar = row.querySelector('.progress-bar-fill');
+  if (bar) bar.style.width = val + '%';
+  state.progress[inp.dataset.key] = val;
+  updateRings();
+}
+
+function addGanttRow() {
+  const newRow = {
+    proj:'P1', id:'NEW-'+Date.now(), task:'Task ใหม่ (คลิกเพื่อแก้ไข)',
+    out:'Output:', owner:'', weeks:[0,0,0,0,0,0,0,0],
+    prio:'high', prog:0, outcome:'Outcome ที่ต้องเกิด'
+  };
+  GANTT_DATA.push(newRow);
+  buildGantt();
+  showToast('✅ เพิ่ม Task แล้ว — คลิกที่ช่องเพื่อแก้ไข');
+}
+
+function updateRings() {
+  ['P1','P2','P3'].forEach((p,pi) => {
+    const items = GANTT_DATA.filter(d=>!d.s && d.proj===p);
+    const avg = items.length ? Math.round(items.reduce((s,d)=>{
+      const key = d.proj+'_'+d.id;
+      return s + (state.progress[key] ?? d.prog);
+    },0) / items.length) : 0;
+    const offset = 87.96 * (1 - avg/100);
+    const ring = document.getElementById('ring'+(pi+1));
+    const txt  = document.getElementById('ring'+(pi+1)+'-txt');
+    if (ring) ring.style.strokeDashoffset = offset;
+    if (txt)  txt.textContent = avg+'%';
+  });
+  const done = Object.values(state.mileDone).filter(Boolean).length;
+  document.getElementById('stat-done').textContent = done;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// OOM TABLE — FULLY EDITABLE
+// ═══════════════════════════════════════════════════════════════════
+function buildOOM() {
+  const tbody = document.getElementById('oomBody');
+  tbody.innerHTML = '';
+  OOM_DATA.forEach(d => {
+    if (d.s) {
+      if (state.oomFilter !== 'ALL' && d.s !== state.oomFilter) return;
+      const tr = document.createElement('tr');
+      tr.className = 'oom-section';
+      tr.innerHTML = `<td colspan="8">${d.label}</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
+    if (state.oomFilter !== 'ALL' && d.proj !== state.oomFilter) return;
+    const key = d.proj + '_oom_' + d.id;
+    const pc = PROJ_CLS[d.proj];
+
+    const projV = getOomField(d,'proj',key);
+    const idV   = getOomField(d,'id',key);
+    const act   = getOomField(d,'act',key);
+    const out   = getOomField(d,'out',key);
+    const oc    = getOomField(d,'oc',key);
+    const imp   = getOomField(d,'imp',key);
+    const dl    = getOomField(d,'dl',key);
+    const prio  = getOomField(d,'prio',key);
+    const isM   = (dl||'').includes('◆');
+
+    const tr = document.createElement('tr');
+
+    // Proj
+    const tdP = document.createElement('td');
+    tdP.innerHTML = `<span class="proj-tag ${PROJ_CLS[projV]||'p1'}" style="cursor:pointer" title="คลิกเพื่อแก้ไข">${projV}</span>`;
+    tdP.addEventListener('click', () => editCell(tdP, projV, v => setOomField(d,'proj',key,v), {
+      select:true, choices: PROJ_OPTS.map(p=>({val:p,label:p}))
+    }));
+    tr.appendChild(tdP);
+
+    // ID
+    const tdId = document.createElement('td');
+    tdId.innerHTML = `<span class="editable-text id-text" title="คลิก">${idV}</span>`;
+    tdId.addEventListener('click', () => editCell(tdId, idV, v => setOomField(d,'id',key,v)));
+    tr.appendChild(tdId);
+
+    // Activity
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<span class="editable-text" style="font-weight:500;font-size:12px" title="คลิกเพื่อแก้ไข Activity">${act}</span>`;
+    tdAct.addEventListener('click', () => editCell(tdAct, act, v => setOomField(d,'act',key,v), {multiline:true}));
+    tr.appendChild(tdAct);
+
+    // Output (blue tint)
+    const tdOut = document.createElement('td');
+    tdOut.style.background = 'rgba(239,246,255,0.7)';
+    tdOut.innerHTML = `<div class="oom-output editable-text" style="font-size:11px" title="คลิกเพื่อแก้ไข Output">${out}</div>`;
+    tdOut.addEventListener('click', () => editCell(tdOut, out, v => setOomField(d,'out',key,v), {multiline:true}));
+    tr.appendChild(tdOut);
+
+    // Outcome (green tint)
+    const tdOc = document.createElement('td');
+    tdOc.style.background = 'rgba(240,253,244,0.7)';
+    tdOc.innerHTML = `<div class="oom-outcome editable-text" style="font-size:11px" title="คลิกเพื่อแก้ไข Outcome">${oc}</div>`;
+    tdOc.addEventListener('click', () => editCell(tdOc, oc, v => setOomField(d,'oc',key,v), {multiline:true}));
+    tr.appendChild(tdOc);
+
+    // Impact (yellow tint)
+    const tdImp = document.createElement('td');
+    tdImp.style.background = 'rgba(255,251,235,0.7)';
+    tdImp.innerHTML = `<div class="oom-impact editable-text" style="font-size:11px" title="คลิกเพื่อแก้ไข Impact">${imp}</div>`;
+    tdImp.addEventListener('click', () => editCell(tdImp, imp, v => setOomField(d,'imp',key,v), {multiline:true}));
+    tr.appendChild(tdImp);
+
+    // Deadline
+    const tdDl = document.createElement('td');
+    tdDl.innerHTML = `<span class="deadline-pill ${isM?'milestone':'normal'} editable-text" title="คลิกเพื่อแก้ Deadline">${dl}</span>`;
+    tdDl.addEventListener('click', () => editCell(tdDl, dl, v => setOomField(d,'dl',key,v)));
+    tr.appendChild(tdDl);
+
+    // Priority
+    const tdPrio = document.createElement('td');
+    tdPrio.innerHTML = PRIO_HTML[prio];
+    tdPrio.style.cursor = 'pointer';
+    tdPrio.title = 'คลิกเพื่อเปลี่ยน Priority';
+    tdPrio.addEventListener('click', () => editCell(tdPrio, prio, v => setOomField(d,'prio',key,v), {
+      select:true, choices: PRIO_OPTS.map(p=>({val:p, label:PRIO_LABELS[p]}))
+    }));
+    tr.appendChild(tdPrio);
+
+    tbody.appendChild(tr);
+  });
+
+  // Add OOM row button
+  const trAdd = document.createElement('tr');
+  trAdd.innerHTML = `<td colspan="8" style="text-align:center;padding:8px">
+    <button class="btn btn-ghost" style="font-size:11px;padding:4px 16px" onclick="addOomRow()">＋ เพิ่ม Activity ใหม่</button>
+  </td>`;
+  tbody.appendChild(trAdd);
+}
+
+function addOomRow() {
+  const newRow = {
+    proj:'P1', id:'NEW', act:'Activity ใหม่',
+    out:'Output:', oc:'Outcome:', imp:'Impact:',
+    dl:'W?', prio:'crit'
+  };
+  OOM_DATA.push(newRow);
+  buildOOM();
+  showToast('✅ เพิ่ม Activity แล้ว');
+}
+
+function addOomRow() {
+  const newRow = {
+    proj:'P1', id:'NEW-'+Date.now(), act:'Activity ใหม่',
+    out:'Output:', oc:'Outcome:', imp:'Impact:',
+    dl:'W?', prio:'crit'
+  };
+  OOM_DATA.push(newRow);
+  buildOOM();
+  showToast('✅ เพิ่ม Activity แล้ว');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MILESTONES — editable week, name, outcome
+// ═══════════════════════════════════════════════════════════════════
+function buildMilestones() {
+  const list = document.getElementById('milestoneList');
+  list.innerHTML = '';
+  MILESTONES.forEach((m,i) => {
+    const key = 'mile_' + i;
+    const done = state.mileDone[key] || false;
+    const pc = PROJ_CLS[m.proj];
+    const el = document.createElement('div');
+    el.className = 'milestone-item';
+
+    // Week (editable)
+    const wEl = document.createElement('div');
+    wEl.className = 'milestone-week editable-text';
+    wEl.textContent = 'W'+m.week;
+    wEl.title = 'คลิกเพื่อแก้ไขสัปดาห์';
+    wEl.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type='number'; inp.min=1; inp.max=12; inp.value=m.week;
+      inp.className='cell-input'; inp.style.width='50px';
+      wEl.innerHTML=''; wEl.appendChild(inp); inp.focus();
+      const c=()=>{m.week=parseInt(inp.value)||m.week; buildMilestones();};
+      inp.addEventListener('blur',c);
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')c();});
+    });
+
+    // Proj select
+    const pEl = document.createElement('div');
+    pEl.className = 'milestone-proj';
+    pEl.innerHTML = `<span class="proj-tag ${pc} editable-text" title="คลิกเพื่อเปลี่ยน Project">${m.proj}</span>`;
+    pEl.addEventListener('click', () => {
+      const sel = document.createElement('select');
+      sel.className='cell-input cell-select'; sel.style.width='60px';
+      PROJ_OPTS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===m.proj)o.selected=true;sel.appendChild(o);});
+      pEl.innerHTML=''; pEl.appendChild(sel); sel.focus();
+      const c=()=>{m.proj=sel.value; buildMilestones();};
+      sel.addEventListener('blur',c);
+      sel.addEventListener('change',c);
+    });
+
+    // Name (editable)
+    const nEl = document.createElement('div');
+    nEl.className = 'milestone-name editable-text';
+    nEl.style.textDecoration = done?'line-through':'';
+    nEl.style.color = done?'var(--muted)':'';
+    nEl.textContent = m.name;
+    nEl.title = 'คลิกเพื่อแก้ชื่อ Milestone';
+    nEl.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type='text'; inp.value=m.name; inp.className='cell-input';
+      nEl.innerHTML=''; nEl.appendChild(inp); inp.focus(); inp.select();
+      const c=()=>{m.name=inp.value.trim()||m.name; buildMilestones();};
+      inp.addEventListener('blur',c);
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')c();});
+    });
+
+    // Outcome (editable)
+    const ocEl = document.createElement('div');
+    ocEl.className = 'milestone-outcome editable-text';
+    ocEl.textContent = m.outcome;
+    ocEl.title = 'คลิกเพื่อแก้ Outcome';
+    ocEl.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type='text'; inp.value=m.outcome; inp.className='cell-input';
+      ocEl.innerHTML=''; ocEl.appendChild(inp); inp.focus(); inp.select();
+      const c=()=>{m.outcome=inp.value.trim()||m.outcome; buildMilestones();};
+      inp.addEventListener('blur',c);
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')c();});
+    });
+
+    // Check
+    const chk = document.createElement('div');
+    chk.className = 'milestone-check ' + (done?'checked':'');
+    chk.addEventListener('click', () => {
+      state.mileDone[key] = !state.mileDone[key];
+      buildMilestones(); updateRings(); saveState();
+    });
+
+    // Diamond
+    const dia = document.createElement('div');
+    dia.className = 'milestone-diamond '+(done?'done':'');
+
+    el.appendChild(dia);
+    el.appendChild(wEl);
+    el.appendChild(pEl);
+    el.appendChild(nEl);
+    el.appendChild(ocEl);
+    el.appendChild(chk);
+    list.appendChild(el);
+  });
+
+  // Add milestone button
+  const addEl = document.createElement('div');
+  addEl.style = 'text-align:center;padding:10px';
+  addEl.innerHTML = `<button class="btn btn-ghost" style="font-size:11px;padding:4px 16px" onclick="addMilestone()">◆ เพิ่ม Milestone ใหม่</button>`;
+  list.appendChild(addEl);
+
+  document.getElementById('stat-mile').textContent = MILESTONES.length;
+}
+
+function addMilestone() {
+  MILESTONES.push({proj:'P1', week:1, name:'Milestone ใหม่ (คลิกเพื่อแก้ไข)', outcome:'Outcome ที่ต้องเกิด'});
+  buildMilestones();
+  showToast('◆ เพิ่ม Milestone แล้ว');
+}
+
+function toggleMile(el, key) {
+  state.mileDone[key] = !state.mileDone[key];
+  buildMilestones();
+  updateRings();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FILTER
+// ═══════════════════════════════════════════════════════════════════
+function setFilter(f) {
+  state.ganttFilter = f;
+  document.querySelectorAll('#ganttFilter .filter-btn').forEach(b => {
+    b.classList.toggle('active',
+      (f==='ALL'&&b.classList.contains('all')) ||
+      (f==='P1'&&b.classList.contains('fp1')) ||
+      (f==='P2'&&b.classList.contains('fp2')) ||
+      (f==='P3'&&b.classList.contains('fp3')));
+  });
+  buildGantt();
+}
+function setOomFilter(f) {
+  state.oomFilter = f;
+  document.querySelectorAll('#oomFilter .filter-btn').forEach(b => {
+    b.classList.toggle('active',
+      (f==='ALL'&&b.classList.contains('all')) ||
+      (f==='P1'&&b.classList.contains('fp1')) ||
+      (f==='P2'&&b.classList.contains('fp2')) ||
+      (f==='P3'&&b.classList.contains('fp3')));
+  });
+  buildOOM();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  const tabs = {overview:0,gantt:1,oom:2,milestones:3,notes:4};
+  document.querySelectorAll('.nav-tab')[tabs[name]]?.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SAVE / LOAD / EXPORT — includes all overrides
+// ═══════════════════════════════════════════════════════════════════
+function saveAll() {
+  saveState();
+  showToast('✅ บันทึกเรียบร้อยแล้ว');
+}
+
+function clearNotes() {
+  if (!confirm('ล้าง Notes ทั้งหมด?')) return;
+  ['note-p1','note-p2','note-p3','note-blockers','note-actions'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  state.notes = {p1:'',p2:'',p3:'',blockers:'',actions:''};
+  showToast('🗑 ล้าง Notes แล้ว');
+}
+
+function resetEdits() {
+  if (!confirm('รีเซ็ตการแก้ไขทั้งหมดกลับสู่ค่าเริ่มต้น?')) return;
+  state.ganttOverride = {};
+  state.oomOverride = {};
+  refreshAll();
+  showToast('↩️ รีเซ็ตแล้ว');
+}
+
+function exportSummary() {
+  const w = state.currentWeek;
+  let txt = `=== PROJECT TRACKER SUMMARY — W${w}/8 ===\n\n`;
+  ['P1','P2','P3'].forEach(p => {
+    const items = GANTT_DATA.filter(d=>!d.s&&d.proj===p);
+    const avg = items.length ? Math.round(items.reduce((s,d)=>{
+      const key=d.proj+'_'+d.id;
+      return s+(state.progress[key]??d.prog);
+    },0)/items.length) : 0;
+    txt += `[${p}] Progress: ${avg}%\n`;
+  });
+  txt += `\nMilestones Done: ${Object.values(state.mileDone).filter(Boolean).length}/${MILESTONES.length}\n`;
+  if (state.notes.p1) txt += `\nP1 Notes:\n${state.notes.p1}\n`;
+  if (state.notes.p2) txt += `\nP2 Notes:\n${state.notes.p2}\n`;
+  if (state.notes.p3) txt += `\nP3 Notes:\n${state.notes.p3}\n`;
+  if (state.notes.blockers) txt += `\nBlockers:\n${state.notes.blockers}\n`;
+  if (state.notes.actions)  txt += `\nNext Actions:\n${state.notes.actions}\n`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Copy แล้ว!')).catch(()=>showToast('📋 Export พร้อม'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RESTORE STATE TO UI
+// ═══════════════════════════════════════════════════════════════════
+function restoreNotes() {
+  document.getElementById('note-p1').value = state.notes.p1||'';
+  document.getElementById('note-p2').value = state.notes.p2||'';
+  document.getElementById('note-p3').value = state.notes.p3||'';
+  document.getElementById('note-blockers').value = state.notes.blockers||'';
+  document.getElementById('note-actions').value  = state.notes.actions||'';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+function refreshAll() {
+  buildWeekTrack();
+  buildGantt();
+  buildOOM();
+  buildMilestones();
+  updateRings();
+}
+
+loadState();
+refreshAll();
+restoreNotes();
+
+// Auto-save every 30s
+setInterval(saveAll, 30000);
+</script>
+</body>
+</html>
+
